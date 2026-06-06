@@ -2,7 +2,7 @@
 
 A REST API for tracking inventory at repair shops and resale stores. Helps owners record what they paid for each phone, its current condition,and the price the same model is going for in the market.
 
-This projec is being built as a hands-on learning vehicle for backend development and DevOps - flask, REST API design, SQL databases, Docker, CI/CD, and Cloud deployment.
+This project is being built as a hands-on learning vehicle for backend development and DevOps - flask, REST API design, SQL databases, Docker, CI/CD, and Cloud deployment.
 
 ## Tech Stack
 
