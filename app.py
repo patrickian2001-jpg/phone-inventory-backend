@@ -92,3 +92,13 @@ def post_phones():
     db.session.commit()
 
     return jsonify(new_phone.to_dict()), 201
+
+#me trying to write the delete route
+
+@app.route('/phones/<int:id>', methods=["DELETE"])
+def erase_phone(id):
+    phone = Phone.query.get(id)
+
+    db.session.delete(phone)
+    db.session.commit()
+    return "Phone has been successfully deleted"
