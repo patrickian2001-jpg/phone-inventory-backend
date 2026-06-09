@@ -3,15 +3,22 @@ Phone Inventory Backend
 A REST API for tracking phone inventory: brand, model, condition,
 purchase price, sale price, and status.
 """
-
+import os
 from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from werkzeug.security import generate_password_hash, check_password_hash
+from dotenv import load_dotenv
 from datetime import datetime
 
 app = Flask(__name__)
 
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///phones.db" #database configuration
+load_dotenv()
+app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
 db = SQLAlchemy(app) #database object
+login_manager = LoginManager()
+login_manager.init_app(app)
 
 class Phone(db.Model):
     __tablename__ = "phones"
@@ -48,6 +55,55 @@ class Phone(db.Model):
             "status": self.status,
         }
 
+#this is a user class to define the users in my app.
+#
+class User(UserMixin, db.Model):
+    __tablename__ = "users"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.Text, nullable=False)
+    email = db.Column(db.Text, nullable=False, unique=True)
+    hash_password = db.Column(db.Text, nullable=False)
+
+    #Serialization; Why do this? maybe I might need this when trying to match the hash pasword.
+    def to_dict(self):
+        return{
+            "id": self.id,
+            "name": self.name,
+            "email": self.email,
+        }    
+
+#this gets the User object for every request.
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
+@app.route('/register', methods=['POST'])
+def user_register():
+    data = request.get_json()
+
+    #Validating that the users enters the name, email, and password.
+    if not data or not data.get('name') or not data.get('email') or not data.get('hash_password'):
+        return jsonify({"error": "Name, email and password are required."}), 400
+
+    #validating the user entered a unique email.
+    if User.query.filter_by(email = data.get('email')).first():
+        return jsonify({"error": "emaill already used please login"}), 409
+    #The password needs to be hashed.
+    hashed_pass = generate_password_hash(data.get("hash_password"), method="pbkdf2:sha256")
+
+    #Create a user object from the incoming data
+    new_user = User(
+        name = data.get("name"),
+        email = data.get("email"),
+        hash_password = hashed_pass,
+    )
+    db.session.add(new_user)
+    db.session.commit()
+
+    return jsonify(new_user.to_dict()), 201
+
+#@app.route('/login') #This is where the users logs in it will ask for an email and password
 
 @app.route('/phones')
 def get_phones():
