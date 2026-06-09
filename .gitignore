@@ -6,3 +6,6 @@ __pycache__/
 
 #database file
 instance/
+
+#Secret file
+.env
