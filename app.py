@@ -82,14 +82,15 @@ def user_register():
     data = request.get_json()
 
     #Validating that the users enters the name, email, and password.
-    if not data or not data.get('name') or not data.get('email') or not data.get('hash_password'):
-        return jsonify({"error": "Name, email and password are required."}), 400
+    if not data or not data.get('name') or not data.get('email') or not data.get('password'):
+        return jsonify({"error": "name, email and password are required."}), 400
 
     #validating the user entered a unique email.
     if User.query.filter_by(email = data.get('email')).first():
-        return jsonify({"error": "emaill already used please login"}), 409
+        return jsonify({"error": "email already used please login"}), 409
+    
     #The password needs to be hashed.
-    hashed_pass = generate_password_hash(data.get("hash_password"), method="pbkdf2:sha256")
+    hashed_pass = generate_password_hash(data.get("password"), method="pbkdf2:sha256")
 
     #Create a user object from the incoming data
     new_user = User(
