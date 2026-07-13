@@ -9,3 +9,5 @@ instance/
 
 #Secret file
 .env
+
+cookies.txt

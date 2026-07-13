@@ -125,6 +125,11 @@ def login():
 
     return jsonify({"message": "Login successful", "user": {"id": user.id, "email": user.email}}), 200
 
+# Whenever someone who is not logged in makes a request that needs them to be logged in it calls this function rather than its default HTMl
+@login_manager.unauthorized_handler 
+def unauthorized():
+    return jsonify({"error": "authentication required"}), 401
+
 @app.route('/phones')
 @login_required
 def get_phones():
@@ -133,6 +138,7 @@ def get_phones():
 
 #Post endpoint
 @app.route('/phones', methods=['POST'])
+@login_required
 def post_phones():
     data = request.get_json()
 
@@ -173,6 +179,7 @@ def post_phones():
 #me trying to write the delete route
 
 @app.route('/phones/<int:id>', methods=["DELETE"])
+@login_required
 def erase_phone(id):
     phone = Phone.query.get(id)
 
