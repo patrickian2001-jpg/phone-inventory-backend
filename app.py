@@ -13,14 +13,14 @@ from datetime import datetime
 
 app = Flask(__name__)
 
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///phones.db" #database configuration
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///phones.db" #database configuration (sqlite:// is the database) (/phones.db is the path)
 load_dotenv()
-app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
+app.config["SECRET_KEY"] = os.getenv("SECRET_KEY") #reads the secret from .env and hands it to flask
 db = SQLAlchemy(app) #database object
 login_manager = LoginManager()
 login_manager.init_app(app)
 
-class Phone(db.Model):
+class Phone(db.Model): #Creating the phone table, defining all the columns that it will have.
     __tablename__ = "phones"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -56,8 +56,7 @@ class Phone(db.Model):
         }
 
 #this is a user class to define the users in my app.
-#
-class User(UserMixin, db.Model):
+class User(UserMixin, db.Model): #UserMixin gives User the session handling methods Flask-login needs.
     __tablename__ = "users"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -65,7 +64,7 @@ class User(UserMixin, db.Model):
     email = db.Column(db.Text, nullable=False, unique=True)
     hash_password = db.Column(db.Text, nullable=False)
 
-    #Serialization; Why do this? maybe I might need this when trying to match the hash pasword.
+    #Serialization; Why do this? maybe I might need this when trying to match the hash pasword. (I dont knwo if we should even allow to get back user data.)
     def to_dict(self):
         return{
             "id": self.id,
@@ -78,7 +77,7 @@ class User(UserMixin, db.Model):
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-@app.route('/register', methods=['POST'])
+@app.route('/register', methods=['POST']) # This is the register section where users enter all the info in the table users
 def user_register():
     data = request.get_json()
 
@@ -103,15 +102,43 @@ def user_register():
 
     return jsonify(new_user.to_dict()), 201
 
-#@app.route('/login') #This is where the users logs in it will ask for an email and password
+#This is where the users login. it will ask for an email and password
+@app.route('/login', methods=['POST']) #I used POST cause it more secure to as data is sent in the Body of the request
+def login():
+    data= request.get_json(silent=True) #Silent=True will silence all media type and parsing error and return none
+
+    if not data or not data.get("email") or not data.get("password"): #This will check if the entered all the required info.
+        return jsonify({"error": "Enter an email and password"}), 400
+
+    email = data.get("email")
+    password = data.get("password")
+
+    user = User.query.filter_by(email=email).first() #Check if a user with email "test@example.com" exists
+    
+    if user is None:
+        return jsonify({"error": "invalid email or password"}), 401  #401 mean unauthorized
+
+    if not check_password_hash(user.hash_password, password):
+        return jsonify({"error": "invalid email or password"}), 401
+
+    login_user(user)
+
+    return jsonify({"message": "Login successful", "user": {"id": user.id, "email": user.email}}), 200
+
+# Whenever someone who is not logged in makes a request that needs them to be logged in it calls this function rather than its default HTMl
+@login_manager.unauthorized_handler 
+def unauthorized():
+    return jsonify({"error": "authentication required"}), 401
 
 @app.route('/phones')
+@login_required
 def get_phones():
     phones = Phone.query.all()
     return jsonify([phone.to_dict() for phone in phones])
 
 #Post endpoint
 @app.route('/phones', methods=['POST'])
+@login_required
 def post_phones():
     data = request.get_json()
 
@@ -152,6 +179,7 @@ def post_phones():
 #me trying to write the delete route
 
 @app.route('/phones/<int:id>', methods=["DELETE"])
+@login_required
 def erase_phone(id):
     phone = Phone.query.get(id)
 
