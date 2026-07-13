@@ -17,11 +17,11 @@ This project is being built as a hands-on learning vehicle for backend developme
 
 - [x] Project scaffolding with virtual environment
 - [x] `GET /phones` endpoint returning hardcoded inventory
-- [ ] `POST /phones` to add new phones
+- [X] `POST /phones` to add new phones
 - [ ] `GET /phones/<id>` to fetch one phone
 - [ ] `PUT` and `DELETE` endpoints
-- [ ] Migrate from in-memory list to SQLite
-- [ ] Input validation and proper error handling
+- [X] Migrate from in-memory list to SQLite
+- [X] Input validation and proper error handling
 - [ ] Dockerize and deploy to home server
 
 ## Running Locally
@@ -37,6 +37,9 @@ source .venv/bin/activate
 
 # Install dependencies
 pip install Flask
+
+#Initialize the database
+python init_db.py
 
 # Run the development server
 flask --app app run
