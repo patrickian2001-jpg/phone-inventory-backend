@@ -6,6 +6,7 @@ purchase price, sale price, and status.
 import os
 from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.exc import IntegrityError
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from dotenv import load_dotenv
@@ -79,15 +80,15 @@ def load_user(user_id):
 
 @app.route('/register', methods=['POST']) # This is the register section where users enter all the info in the table users
 def user_register():
-    data = request.get_json()
+    data = request.get_json(silent=True)
 
     #Validating that the users enters the name, email, and password.
     if not data or not data.get('name') or not data.get('email') or not data.get('password'):
         return jsonify({"error": "name, email and password are required."}), 400
 
     #validating the user entered a unique email.
-    if User.query.filter_by(email = data.get('email')).first():
-        return jsonify({"error": "email already used please login"}), 409
+    #if User.query.filter_by(email = data.get('email')).first():
+        #return jsonify({"error": "email already used please login"}), 409
     
     #The password needs to be hashed.
     hashed_pass = generate_password_hash(data.get("password"), method="pbkdf2:sha256")
@@ -98,8 +99,13 @@ def user_register():
         email = data.get("email"),
         hash_password = hashed_pass,
     )
-    db.session.add(new_user)
-    db.session.commit()
+    #This try/except will catch any IntegrityError if a Race condition occurs and it gets past the if statement.
+    try:
+        db.session.add(new_user)
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        return jsonify({"error": "email already used please login"}), 409
 
     return jsonify(new_user.to_dict()), 201
 
