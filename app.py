@@ -19,10 +19,15 @@ db = SQLAlchemy() #database object
 
 login_manager = LoginManager()
 
-def create_app(): # I had to make an app factory cause during testing I was using the app prod database and I wanted to use a temp database for testing.
+def create_app(test_config=None): # I had to make an app factory cause during testing I was using the app prod database and I wanted to use a temp database for testing.
     app = Flask(__name__)
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///phones.db"
     app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
+
+    #Override defaults if testing
+    if test_config:
+        app.config.update(test_config)
+
     db.init_app(app)
     login_manager.init_app(app)
     register_routes(app)
