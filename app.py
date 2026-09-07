@@ -48,7 +48,8 @@ def register_routes(app):
         #Validating that the users enters the name, email, and password.
         if not data or not data.get('name') or not data.get('email') or not data.get('password'):
             return jsonify({"error": "name, email and password are required."}), 400
-
+        
+        #I can't remember why I commented this out.
         #validating the user entered a unique email.
         #if User.query.filter_by(email = data.get('email')).first():
             #return jsonify({"error": "email already used please login"}), 409
@@ -130,8 +131,13 @@ def register_routes(app):
             status=status,
         )
 
-        db.session.add(new_phone)
-        db.session.commit()
+        #we need to catch dublicate imei or people trying to add the same phone at the same time.
+        try:
+            db.session.add(new_phone)
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            return jsonify({"error": "imei already exists"}), 409
 
         return jsonify(new_phone.to_dict()), 201
 
